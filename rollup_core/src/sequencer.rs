@@ -32,8 +32,9 @@ use solana_sdk::{
     transaction::{SanitizedTransaction, Transaction},
     transaction_context::TransactionContext,
 };
+
 use solana_svm::{
-    message_processor::MessageProcessor,
+    //message_processor::MessageProcessor,
     transaction_processing_callback::TransactionProcessingCallback,
     transaction_processor::{TransactionBatchProcessor, TransactionProcessingEnvironment},
 };
@@ -151,17 +152,17 @@ pub fn run(
             Transaction::from(transaction.clone()),
             &HashSet::new(),
         );
-        log::info!("{:?}", sanitized.clone());
+        log::info!("Sanitized: {:?}", sanitized.clone());
 
-        let mut timings;
+        //let mut timings;
 
-        let result_msg = MessageProcessor::process_message(
-            &sanitized.unwrap().message(),
-            &vec![],
-            &mut invoke_context,
-            &mut timings,
-            &mut used_cu,
-        );
+        //let result_msg = MessageProcessor::process_message(
+        //    &sanitized.unwrap().message(),
+        //    &vec![],
+        //    &mut invoke_context,
+        //    &mut timings,
+        //    &mut used_cu,
+        //);
 
         // Send processed transaction to db for storage and availability
         rollupdb_sender
