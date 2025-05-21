@@ -28,12 +28,11 @@ pub struct GetTransaction {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let keypair = signer::keypair::read_keypair_file("/home/dev/.solana/testkey.json").unwrap();
-    let keypair2 = signer::keypair::read_keypair_file("/home/dev/.solana/mykey_1.json").unwrap();
+    let keypair = signer::keypair::read_keypair_file("./testkey1.json").unwrap();
+    let keypair2 = signer::keypair::read_keypair_file("./testkey2.json").unwrap();
     let rpc_client = RpcClient::new("https://api.devnet.solana.com".into());
 
-    let ix =
-        system_instruction::transfer(&keypair2.pubkey(), &keypair.pubkey(), 1 * LAMPORTS_PER_SOL);
+    let ix = system_instruction::transfer(&keypair2.pubkey(), &keypair.pubkey(), 1_000_000);
     let tx = Transaction::new_signed_with_payer(
         &[ix],
         Some(&keypair2.pubkey()),

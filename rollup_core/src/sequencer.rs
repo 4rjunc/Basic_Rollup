@@ -5,23 +5,39 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use async_channel::Sender;
-use crossbeam::channel::{Sender as CBSender, Receiver as CBReceiver};
+use crossbeam::channel::{Receiver as CBReceiver, Sender as CBSender};
 use solana_client::{nonblocking::rpc_client as nonblocking_rpc_client, rpc_client::RpcClient};
 use solana_compute_budget::compute_budget::ComputeBudget;
 use solana_program_runtime::{
     invoke_context::{self, EnvironmentConfig, InvokeContext},
-    loaded_programs::{BlockRelation, ForkGraph, LoadProgramMetrics, ProgramCacheEntry, ProgramCacheForTxBatch, ProgramRuntimeEnvironments}, sysvar_cache, timings::ExecuteTimings,
+    loaded_programs::{
+        BlockRelation, ForkGraph, LoadProgramMetrics, ProgramCacheEntry, ProgramCacheForTxBatch,
+        ProgramRuntimeEnvironments,
+    },
+    sysvar_cache,
+    timings::ExecuteTimings,
 };
+use solana_sdk::feature_set::FeatureSet;
 
 use solana_bpf_loader_program::syscalls::create_program_runtime_environment_v1;
 use solana_sdk::{
-    account::{AccountSharedData, ReadableAccount}, clock::{Epoch, Slot}, feature_set::FeatureSet, fee::FeeStructure, hash::Hash, pubkey::Pubkey, rent::Rent, rent_collector::RentCollector, transaction::{SanitizedTransaction, Transaction}, transaction_context::TransactionContext
+    account::{AccountSharedData, ReadableAccount},
+    clock::{Epoch, Slot},
+    fee::FeeStructure,
+    hash::Hash,
+    pubkey::Pubkey,
+    rent::Rent,
+    rent_collector::RentCollector,
+    transaction::{SanitizedTransaction, Transaction},
+    transaction_context::TransactionContext,
 };
 use solana_svm::{
     message_processor::MessageProcessor,
     transaction_processing_callback::TransactionProcessingCallback,
     transaction_processor::{TransactionBatchProcessor, TransactionProcessingEnvironment},
 };
+
+//use agave_feature_set::FeatureSet;
 
 use crate::{rollupdb::RollupDBMessage, settle::settle_state};
 
@@ -41,7 +57,6 @@ pub fn run(
                 add_settle_proof: None,
                 add_processed_transaction: None,
             })
-            
             .map_err(|_| anyhow!("failed to send message to rollupdb"))?;
 
         // Verify ransaction signatures, integrity
@@ -84,29 +99,29 @@ pub fn run(
 
         let mut transaction_context = TransactionContext::new(accounts_data, Rent::default(), 0, 0);
 
-
         let runtime_env = Arc::new(
             create_program_runtime_environment_v1(&feature_set, &compute_budget, false, false)
                 .unwrap(),
         );
 
         let mut prog_cache = ProgramCacheForTxBatch::new(
-            Slot::default(), 
+            Slot::default(),
             ProgramRuntimeEnvironments {
                 program_runtime_v1: runtime_env.clone(),
                 program_runtime_v2: runtime_env,
             },
-            None, 
+            None,
             Epoch::default(),
         );
 
         let sysvar_c = sysvar_cache::SysvarCache::default();
+
         let env = EnvironmentConfig::new(
             Hash::default(),
-            None,
-            None,
-            Arc::new(feature_set),
             lamports_per_signature,
+            34,
+            &|_pubkey: &Pubkey| -> u64 { 34 }, // Pass a closure that returns 34 for any pubkey
+            Arc::new(feature_set),
             &sysvar_c,
         );
         // let default_env = EnvironmentConfig::new(blockhash, epoch_total_stake, epoch_vote_accounts, feature_set, lamports_per_signature, sysvar_cache)
@@ -120,27 +135,24 @@ pub fn run(
         //     lamports_per_signature,
         //     rent_collector: Some(&rent_collector),
         // };
-        
+
         let mut invoke_context = InvokeContext::new(
-           &mut transaction_context,
-           &mut prog_cache,
-           env,
-           None,
-           compute_budget.to_owned()
+            &mut transaction_context,
+            &mut prog_cache,
+            env,
+            None,
+            compute_budget.to_owned(),
         );
 
         let mut used_cu = 0u64;
         let sanitized = SanitizedTransaction::try_from_legacy_transaction(
             Transaction::from(transaction.clone()),
             &HashSet::new(),
-        )
-        ;
+        );
         log::info!("{:?}", sanitized.clone());
-
 
         let mut timings = ExecuteTimings::default();
 
-        
         let result_msg = MessageProcessor::process_message(
             &sanitized.unwrap().message(),
             &vec![],
@@ -157,7 +169,6 @@ pub fn run(
                 frontend_get_tx: None,
                 add_settle_proof: None,
             })
-            
             .unwrap();
 
         // Call settle if transaction amount since last settle hits 10
