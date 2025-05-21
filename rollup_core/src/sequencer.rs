@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use async_channel::Sender;
+use cbe_program_runtime::timings;
 use crossbeam::channel::{Receiver as CBReceiver, Sender as CBSender};
 use solana_client::{nonblocking::rpc_client as nonblocking_rpc_client, rpc_client::RpcClient};
 use solana_compute_budget::compute_budget::ComputeBudget;
@@ -15,7 +16,7 @@ use solana_program_runtime::{
         ProgramRuntimeEnvironments,
     },
     sysvar_cache,
-    timings::ExecuteTimings,
+    //timings::ExecuteTimings,
 };
 use solana_sdk::feature_set::FeatureSet;
 
@@ -152,7 +153,7 @@ pub fn run(
         );
         log::info!("{:?}", sanitized.clone());
 
-        let mut timings = ExecuteTimings::default();
+        let mut timings;
 
         let result_msg = MessageProcessor::process_message(
             &sanitized.unwrap().message(),
