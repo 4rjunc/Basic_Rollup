@@ -116,6 +116,7 @@ pub fn run(
 
         let sysvar_c = sysvar_cache::SysvarCache::default();
 
+        // TODO: CHECK THE ARGUEMNTS BEFORE FINALIZING, ARGUEMNTS ADDED JUST TO STATISFY THE TYPES
         let env = EnvironmentConfig::new(
             Hash::default(),
             lamports_per_signature,
