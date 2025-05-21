@@ -1,8 +1,8 @@
 use async_channel::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
-use solana_sdk::{
-    account::AccountSharedData, keccak::Hash, pubkey::Pubkey, transaction::Transaction,
-};
+use solana_sdk::{account::AccountSharedData, pubkey::Pubkey, transaction::Transaction};
+
+use solana_sdk::hash::Hash;
 
 use crossbeam::channel::{Receiver as CBReceiver, Sender as CBSender};
 use std::{
